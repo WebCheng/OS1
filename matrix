@@ -1,5 +1,13 @@
 #!/bin/bash 
 
+# I used the double array to store the value at first. 
+# The double array is easy for me to do some operative.
+# However, this writing style will like the C language.
+# According to profesor, the bash can read the file directly.
+# Therefore, I maybe need to avoid to restore the data again.
+# I just needto get the data from the file.
+
+# Using global value for easily using
 mtrInfo1=();mtrInfo2=()
 taskName=$1
 mtrName2=$3
@@ -7,6 +15,11 @@ declare -A mtrData1
 declare -A mtrData2
 declare -A mtrTrpData
 
+# par1= file name
+# par2= store in which data 
+# problem:
+#  because dont know how to using ref par. so use the par2 to control it 
+#  find the "eval" but dont know why can not work at the array
 CountDims(){
 	local cols=0; local rows=0
 	while read myLine; do
@@ -14,7 +27,6 @@ CountDims(){
 
 	       	for i in $myLine; do
 			
-			#
 	                if [ $2 == 1 ]; then
 	                        mtrData1[$rows,$cols]=$i
         	        else
@@ -38,6 +50,9 @@ dims(){
 	echo "${mtrInfo1[@]}"
 }
 
+#par1= row
+#par2= col
+#par3= which data are transpose know
 GetMtrTranspose(){
 	rows=$1;cols=$2
 	
@@ -52,6 +67,8 @@ GetMtrTranspose(){
 	done
 }
 
+# using specical if in the loop for the last /t
+# have found trim method on line but it has the "sed" command which is limited in this assignment.
 transpose(){
 	
 	CountDims $1 1
@@ -72,6 +89,8 @@ transpose(){
         done
 }
 
+# using the (a + (b/2)*( (a>0)*2-1 )) / b for round value
+# found some resource using awk or bc 
 mean(){
 	local str=""
 	CountDims $1 1
@@ -93,6 +112,9 @@ mean(){
 	echo
 }
 
+# 1. using Function to get the data, col and row
+# 2. check row and col 
+# 3. add and print
 add(){
 	CountDims $1 1
 	CountDims $2 2
@@ -116,6 +138,11 @@ add(){
 	done		
 }
 
+
+# 1. get file data, row and col
+# 2. check the matrix
+# 3. mul and print
+# At here it is easy to mutiply two arrayes by using the double array
 multiply(){
         CountDims $1 1
         CountDims $2 2
@@ -147,7 +174,9 @@ multiply(){
 }
 
 ##############################################
-# Getting the file from stdin or input file. #
+# Getting the file from stdin or input file. 
+# Using "${2:-/dev/stdin}" to get the file from both resource
+# Using $2 to check the file status
 ##############################################
 mtrName1="${2:-/dev/stdin}"
 
@@ -162,7 +191,7 @@ if ! [ -f $2 ]; then
 fi
 
 ##################################################
-# Checking operation name and argument numbers.  #
+# Checking operation name and argument numbers.  
 ##################################################
 if [[("$taskName" == "dims") || ("$taskName" == "transpose") || ("$taskName" == "mean")]]; then
 	
