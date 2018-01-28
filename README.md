@@ -1,4 +1,4 @@
-# OS_HW1_BashShell
+# assigment-1
 Using bash shell to write the "matrix"
 
 matrix dims [MATRIX]
