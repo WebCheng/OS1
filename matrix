@@ -1,5 +1,6 @@
 #!/bin/bash 
-
+# Name: Webster Cheng
+# ID: 933-295-313
 # I used the double array to store the value at first. 
 # The double array is easy for me to do some operative.
 # However, this writing style will like the C language.
