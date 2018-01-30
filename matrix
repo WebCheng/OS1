@@ -8,7 +8,9 @@
 # Therefore, I maybe need to avoid to restore the data again.
 # I just needto get the data from the file.
 
-# Using global value for easily using
+
+# Global Value
+# For easy using
 mtrInfo1=();mtrInfo2=()
 taskName=$1
 mtrName2=$3
@@ -16,11 +18,14 @@ declare -A mtrData1
 declare -A mtrData2
 declare -A mtrTrpData
 
+# Count dims and load the data into the array 
 # par1= file name
-# par2= store in which data 
-# problem:
-#  because dont know how to using ref par. so use the par2 to control it 
-#  find the "eval" but dont know why can not work at the array
+# par2= for store in which data (dont know how to using ref par)
+# 1. Load file in line by while
+# 2. splite the line by for in
+# 3. store into array (if => store into which array) 
+# 4. store the row and col info into mtrinfo 
+# (mtrinfo => At first want to wirte the "class" to store every thing inside, but dont know how to use it)
 CountDims(){
 	local cols=0; local rows=0
 	while read myLine; do
@@ -46,14 +51,19 @@ CountDims(){
 	fi
 }
 
+# Output the row and column
+# 1. Load the data
+# 2. output the value
 dims(){
 	CountDims $1 1
 	echo "${mtrInfo1[@]}"
 }
 
-#par1= row
-#par2= col
-#par3= which data are transpose know
+# Transpose the data into the "mtrTrpData"
+# par1= row
+# par2= col
+# par3= which data are transpose know
+# At first, I wanted to use this function for multily. 
 GetMtrTranspose(){
 	rows=$1;cols=$2
 	
@@ -68,8 +78,11 @@ GetMtrTranspose(){
 	done
 }
 
-# using specical if in the loop for the last /t
-# have found trim method on line but it has the "sed" command which is limited in this assignment.
+# Transpose the intu data
+# 1. load the data
+# 2. transpose data 
+# 3. output the transpose data
+# Using specical if in the loop for the last /t
 transpose(){
 	
 	CountDims $1 1
@@ -90,6 +103,8 @@ transpose(){
         done
 }
 
+# 1. load the data 
+# 2. Double for loop to get the value
 # using the (a + (b/2)*( (a>0)*2-1 )) / b for round value
 # found some resource using awk or bc 
 mean(){
@@ -113,9 +128,9 @@ mean(){
 	echo
 }
 
-# 1. using Function to get the data, col and row
-# 2. check row and col 
-# 3. add and print
+# 1. Using Function to get the data, col and row
+# 2. Check two matrix can add
+# 3. loop and add two matrixes
 add(){
 	CountDims $1 1
 	CountDims $2 2
