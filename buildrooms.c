@@ -28,7 +28,7 @@ struct Room
      room type@start room = 1, middle room = 2, end room = 3;*/
     int conNum;
     struct Connect *connect;
-    int room_type;
+    char* room_type;
 };
 
 struct Connect
@@ -72,11 +72,11 @@ void createRooms(struct Room *rmArr)
         rm->connect = con;
 
         if (numRm == 0)
-            rm->room_type = 0;
+            rm->room_type = "START_ROOM";
         else if (numRm == (ROOM_USED_NUM - 1))
-            rm->room_type = 3;
+            rm->room_type = "MID_ROOM";
         else
-            rm->room_type = 2;
+            rm->room_type = "END_ROOM";
 
         usedIdx[numRm] = idx;
         rmArr[numRm] = *rm;
@@ -136,11 +136,11 @@ void connectRoom(struct Room *rmArr)
 
 char *getDirName()
 {
-    // get the current process id.
+    /* get the current process id.8*/
     pid_t pid = getpid();
-    // Create the name
+    
     int dirLen = strlen(".rooms.") + strlen("chengwe") + 10;
-    // allocate space for the name
+    
     char *dir_name = malloc(sizeof(char) * dirLen);
     sprintf(dir_name, "%s.rooms.%d", "chengwe", pid);
     return dir_name;
@@ -148,15 +148,30 @@ char *getDirName()
 
 void generateFile(struct Room *rmArr)
 {
-    int i;
-    char *dir = getDirName();
-    for (i = 0; i < ROOM_USED_NUM; i++)
-    {
-        char file[] = dir + "/" + rmArr[i];
-        int opFile = open(file, O_WRONLY | O_CREAT, 0777);
+    pid_t pid = getpid();
+    int fileLen = strlen("chengwe") + strlen(".rooms.") + 10;
+    char fDir [fileLen];
+    sprintf(fDir, "%s.rooms.%d", "chengwe", pid);
+    
+    mkdir(fDir, 0700);
+    chdir(fDir);
 
-        close(opFile);
+    int i, j;
+    for(i = 0; i < ROOM_USED_NUM; i++){
+        FILE *file = fopen(rmArr[i].room_name, "w");
+
+        fprintf(file, "ROOM NAME: %s\n", rmArr[i].room_name);
+  
+        for (j = 0; j < rmArr[i].conNum; j++) 
+        {
+            fprintf(file, "CONNECTION %d: %s\n", j + 1, rmArr[i].connect[j].connect_room->room_name);
+        }
+        fprintf(file, "ROOM TYPE: %s", rmArr[i].room_type);
+    
+        fclose(file);
     }
+
+    chdir("..");
 }
 
 int main()
@@ -168,7 +183,7 @@ int main()
 
     connectRoom(rmArr);
 
-    int i, j;
+    /*int i, j;
     for (i = 0; i < ROOM_USED_NUM; i++)
     {
         printf("Room name: %s\n", rmArr[i].room_name);
@@ -177,12 +192,11 @@ int main()
             printf("conn name: %s\n", rmArr[i].connect[j].connect_room->room_name);
 
         printf("\n");
-    }
+    }*/
 
     generateFile(rmArr);
 
     free(rmArr);
 
-    system("pause");
     return 0;
 }
