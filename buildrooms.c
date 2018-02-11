@@ -21,19 +21,38 @@ char *room_name_list[ROOM_LIST_NUM] = {
     "ii",
     "jj"};
 
+/*
+*EXAMPLE:
+*   LIST room [7];
+*
+*   room[0]{
+*       room name = "XXXX";
+*       connect number = 2;
+*       connect =>point to connection room list
+*       room type = "END_ROOM"
+*           }
+*
+*   Connect[0-1]
+*       room idx = will be the LIST room position index
+*       room name => point to the roomlist[X] position
+*/
 struct Room
 {
-    char *room_name;
-    /*int *con_room;
-     room type@start room = 1, middle room = 2, end room = 3;*/
+    /*room name (MAX len 8)*/
+    char *room_name; 
+    /*Connecting room number*/
     int conNum;
+    /*Connecting room number*/
     struct Connect *connect;
+    /*1st:START_ROOM 2-:MID_ROOM Last:END_ROOM*/
     char* room_type;
 };
 
 struct Connect
 {
+    /*connecting room number*/
     int room_idx;
+    /*point to the*/
     struct Room *connect_room;
 };
 
@@ -74,9 +93,9 @@ void createRooms(struct Room *rmArr)
         if (numRm == 0)
             rm->room_type = "START_ROOM";
         else if (numRm == (ROOM_USED_NUM - 1))
-            rm->room_type = "MID_ROOM";
-        else
             rm->room_type = "END_ROOM";
+        else
+            rm->room_type = "MID_ROOM";
 
         usedIdx[numRm] = idx;
         rmArr[numRm] = *rm;
@@ -132,20 +151,14 @@ void connectRoom(struct Room *rmArr)
             setOtherConRoom(rmArr, i, idx2);
         }
     }
-}
+} 
 
-char *getDirName()
-{
-    /* get the current process id.8*/
-    pid_t pid = getpid();
-    
-    int dirLen = strlen(".rooms.") + strlen("chengwe") + 10;
-    
-    char *dir_name = malloc(sizeof(char) * dirLen);
-    sprintf(dir_name, "%s.rooms.%d", "chengwe", pid);
-    return dir_name;
-}
-
+/*
+*   1. create dir [chengwe.rooms.pid]
+*   2. cd to dir 
+*   3. create the file and write content
+*   4. cd ..
+*/
 void generateFile(struct Room *rmArr)
 {
     pid_t pid = getpid();
@@ -181,18 +194,7 @@ int main()
 
     createRooms(rmArr);
 
-    connectRoom(rmArr);
-
-    /*int i, j;
-    for (i = 0; i < ROOM_USED_NUM; i++)
-    {
-        printf("Room name: %s\n", rmArr[i].room_name);
-
-        for (j = 0; j < rmArr[i].conNum; j++)
-            printf("conn name: %s\n", rmArr[i].connect[j].connect_room->room_name);
-
-        printf("\n");
-    }*/
+    connectRoom(rmArr); 
 
     generateFile(rmArr);
 
