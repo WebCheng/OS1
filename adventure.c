@@ -206,6 +206,21 @@ void* genCurrentTimeFile(void *arg)
     return NULL;
 }
 
+void readDataPrint()
+{
+    char*line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    FILE *fp = fopen("./currentTime.txt", "r");
+
+    while((read = getline(&line,&len,fp)) != -1)
+    {
+        printf("\n%s\n",line);
+    }
+    fclose(fp);
+    if (line)
+        free(line);
+}
 
 int main()
 {
@@ -264,6 +279,7 @@ int main()
             pthread_join(tid, NULL);
             //pthread_mutex_lock(&lock);    
             pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
+            readDataPrint();
         }
 
         printf("\n");
