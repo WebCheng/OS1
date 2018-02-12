@@ -5,8 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 #define ROOM_USED_NUM 7
+
+pthread_t tid;
+pthread_mutex_t lock;
 
 struct Room
 {
@@ -177,8 +181,31 @@ void printFileinfo(struct Room *rmArr, int rmIdx)
         else
             printf(" %s.\n", rmArr[rmIdx].connect[i].connect_room->room_name);
     }
-    printf("WHERE TO? >");
 }
+
+void* genCurrentTimeFile(void *arg)
+{    
+    FILE *file = fopen("./currentTime.txt", "w");
+        
+    pthread_mutex_lock(&lock);
+    char outstr[200];
+    time_t t;
+    struct tm *tmp;
+
+    t = time(NULL);
+    tmp = localtime(&t);
+    
+    strftime(outstr, sizeof(outstr),"%I:%M%p, %A, %B %d, %Y",tmp);
+    //printf("\n %s\n", outstr);
+
+    fprintf(file, "%s", outstr);
+
+    fclose(file);
+
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
+
 
 int main()
 {
@@ -190,9 +217,13 @@ int main()
 
     int curIdx = conRmPointGetStartRm(rmArr);
 
+    //genCurrentTimeFile();
+
+    //pthread_mutex_lock(&lock);
+    pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
+
     while (1)
     {
-
         exists = 0;
         if (strcmp(rmArr[curIdx].room_type, "END_ROOM") == 0)
         {
@@ -205,7 +236,11 @@ int main()
 
             break;
         }
-        printFileinfo(rmArr, curIdx);
+
+        if(strcmp (playerMove, "time") != 0)
+            printFileinfo(rmArr, curIdx);
+        
+        printf("WHERE TO? >");
         scanf("%99s", playerMove);
 
         for (j = 0; j < rmArr[curIdx].conNum; j++)
@@ -218,8 +253,18 @@ int main()
                 exists = 1;
             }
         }
-        if (!exists)
-            printf("HUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
+
+        if (!exists && strcmp( playerMove, "time") != 0 )
+        {
+            printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
+        }
+        else if (strcmp( playerMove, "time") == 0 )
+        {
+            //pthread_mutex_unlock(&lock);
+            pthread_join(tid, NULL);
+            //pthread_mutex_lock(&lock);    
+            pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
+        }
 
         printf("\n");
     }
