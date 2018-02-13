@@ -6,6 +6,23 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+/*
+Several complex and weird parts.
+
+Load ALL the file in the special directory.
+Because of getting the last modifie time.
+
+Load ALL the file and create the room data including the connect information.
+Because of getting the "START_ROOM" info.
+
+Running the code using the while loop and several if to control the game output.
+Cannot figur out more quickly way to do it and no time to refine it.
+
+Mutiple thread
+Dont understand all of the thread part.
+Just fallowing the professor hint.
+Others quesiton: parallel 
+*/
 
 #define ROOM_USED_NUM 7
 
@@ -20,7 +37,7 @@ struct Room
     int conNum;
     /*Connecting room number*/
     struct Connect *connect;
-    /*1st:START_ROOM 2-:MID_ROOM Last:END_ROOM*/
+    /*START_ROOM; MID_ROOM; END_ROOM;*/
     char *room_type;
 };
 
@@ -33,14 +50,17 @@ struct Connect
     struct Room *connect_room;
 };
 
-void getDir(char *dir)
+/*
+* 1. load the file (NAME LIKE "chengwe.rooms.")
+* 2. get the last mod time file
+*/
+void getlastDir(char *dir)
 {
     struct stat fileState;
     time_t lastModified;
     DIR *d = opendir(".");
     struct dirent *dp;
     int count = 0;
-    char tmp[256] = "./";
 
     if (d)
     {
@@ -51,6 +71,7 @@ void getDir(char *dir)
 
             stat(dp->d_name, &fileState);
 
+            /*First value can pass it &&&&&&   get the last mod time file*/
             if (count != 0 && lastModified >= fileState.st_mtime)
                 continue;
 
@@ -60,12 +81,13 @@ void getDir(char *dir)
         }
         closedir(d);
     }
-    strcat(dir, "/");
-    strcat(tmp, dir);
-    strcpy(dir, tmp);
+    sprintf(dir, "./%s/", dir);
 }
 
-
+/*Load the data to the ROOM ARRAY
+* 1. read the data
+* 2. get the substring
+*/
 void loadFileContent(char *dirFile, struct Room *rmArr, int i)
 {
     char *splitC = ":", *line = NULL, *rmName, *rmType, *rmCon;
@@ -77,12 +99,14 @@ void loadFileContent(char *dirFile, struct Room *rmArr, int i)
 
     while ((read = getline(&line, &len, fp)) != -1)
     {
+        /*EX: "ROOM NAME: XYZZY\n"*/
         if (strstr(line, "ROOM NAME") != NULL)
         {
             rmName = strtok(line, ":");
             rmName = strtok(NULL, " \n");
             strcpy(rmArr[i].room_name, rmName);
         }
+        /*EX: "CONNECTION 1: PLOVER\n"*/
         else if (strstr(line, "CONNECTION") != NULL)
         {
             rmCon = strtok(line, " :");
@@ -91,6 +115,7 @@ void loadFileContent(char *dirFile, struct Room *rmArr, int i)
             strcpy(rmArr[i].connect[rmArr[i].conNum].con_name, rmCon);
             rmArr[i].conNum += 1;
         }
+        /*EX: "ROOM TYPE: START_ROOM\n"*/
         else if (strstr(line, "ROOM TYPE") != NULL)
         {
             rmType = strtok(line, ":");
@@ -104,11 +129,15 @@ void loadFileContent(char *dirFile, struct Room *rmArr, int i)
         free(line);
 }
 
+/*
+* 1. get the last modified directory (file_name like "chengwe.roo%")
+* 2. load data from the file under the directory to the Array.
+*/
 void loadFile(struct Room *rmArr)
 {
     char *dir = malloc(sizeof(char) * 256);
     char *dirFile = malloc(sizeof(char) * 256);
-    getDir(dir);
+    getlastDir(dir);
 
     DIR *d = opendir(dir);
     struct dirent *dp;
@@ -126,8 +155,11 @@ void loadFile(struct Room *rmArr)
             i += 1;
         }
     }
+    free(dir);
+    free(dirFile);
 }
 
+/*Malloc mmemory for the array*/
 struct Room *creatRmArr()
 {
     int i, j;
@@ -146,6 +178,27 @@ struct Room *creatRmArr()
     return rmArr;
 }
 
+/*Free the memmory*/
+void freeArr(struct Room *rmArr)
+{
+    int i, j;
+    for (i = 0; i < ROOM_USED_NUM; i++)
+    {
+        for (j = 0; j < 6; j++)
+            free(rmArr[i].connect[j].con_name);
+        free(rmArr[i].room_name);
+        free(rmArr[i].connect);
+        free(rmArr[i].room_type);
+    }
+    free(rmArr);
+}
+
+/* Using three layer loop to set the connecting infor
+* 1. setting the connect room( pointer to the room array[i] )
+* 2. setting the room id (the index of connecting room)
+* 3. setting the room type (START_ROOM, MID_ROOM, END_ROOM)
+* 4. Return the start room array index
+*/
 int conRmPointGetStartRm(struct Room *rmArr)
 {
     int i, j, k, curIdx;
@@ -169,13 +222,17 @@ int conRmPointGetStartRm(struct Room *rmArr)
     return curIdx;
 }
 
+/*
+* print the game information
+*/
 void printFileinfo(struct Room *rmArr, int rmIdx)
 {
     int i;
     printf("CURRENT LOCATION: %s\n", rmArr[rmIdx].room_name);
-    printf("PSSIBLE CONNECTIONS:");
+    printf("POSSIBLE CONNECTIONS:");
     for (i = 0; i < rmArr[rmIdx].conNum; i++)
     {
+        /*last connect room => change the line*/
         if (i != rmArr[rmIdx].conNum - 1)
             printf(" %s,", rmArr[rmIdx].connect[i].connect_room->room_name);
         else
@@ -183,63 +240,64 @@ void printFileinfo(struct Room *rmArr, int rmIdx)
     }
 }
 
-void* genCurrentTimeFile(void *arg)
-{    
+/*
+* second thread to generate txt file
+* file content:  1:03pm, Tuesday, September 13, 2016
+*/
+void *genCurrentTimeFile(void *arg)
+{
+    /*lock the main thread*/
     pthread_mutex_lock(&lock);
 
-    FILE *file = fopen("./currentTime.txt", "w");
-        
     char outstr[200];
     time_t t;
     struct tm *tmp;
 
+    FILE *file = fopen("./currentTime.txt", "w");
+
     t = time(NULL);
     tmp = localtime(&t);
-    
-    strftime(outstr, sizeof(outstr),"%I:%M%p, %A, %B %d, %Y",tmp);
-
+    strftime(outstr, sizeof(outstr), "%I:%M%p, %A, %B %d, %Y", tmp);
     fprintf(file, "%s", outstr);
-
     fclose(file);
 
     pthread_mutex_unlock(&lock);
     return NULL;
 }
 
-void readDataPrint()
+/*
+* read file and print the content in the file
+*/
+void readDataPrint(char *file)
 {
-    char*line = NULL;
+    char *line = NULL;
     size_t len = 0;
     ssize_t read;
-    FILE *fp = fopen("./currentTime.txt", "r");
+    FILE *fp = fopen(file, "r");
 
-    while((read = getline(&line,&len,fp)) != -1)
+    while ((read = getline(&line, &len, fp)) != -1)
     {
-        printf("\n%s\n",line);
+        printf("\n%s\n", line);
     }
     fclose(fp);
     if (line)
         free(line);
 }
 
-int main()
+/*
+* Using the while loop for continue running the game script
+* 
+*/
+void runTheGame(struct Room *rmArr, int curIdx)
 {
-    char *playerPath[100];
-    char playerMove[100];
+    /*playerPath = the room play been; playerMove = the room */
+    char *playerPath[100], playerMove[100];
     int numOfSteps = 0, i, j, exists;
-    struct Room *rmArr = creatRmArr();
-    loadFile(rmArr);
-
-    int curIdx = conRmPointGetStartRm(rmArr);
-
-    //genCurrentTimeFile();
-
-    pthread_mutex_lock(&lock);
-    pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
-
     while (1)
     {
         exists = 0;
+
+        /*For the END Room step=> print all room been before;  break;*/
         if (strcmp(rmArr[curIdx].room_type, "END_ROOM") == 0)
         {
             printf("\nYOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
@@ -252,38 +310,62 @@ int main()
             break;
         }
 
-        if(strcmp (playerMove, "time") != 0)
+        /*If command == "time" not print the game info*/
+        if (strcmp(playerMove, "time") != 0)
             printFileinfo(rmArr, curIdx);
-        
+
+        /*scan the palyer command*/
         printf("WHERE TO? >");
         scanf("%99s", playerMove);
 
-        for (j = 0; j < rmArr[curIdx].conNum; j++)
+        if (strcmp(playerMove, "time") != 0)
         {
-            if (strcmp(playerMove, rmArr[curIdx].connect[j].con_name) == 0)
+            /*check command room is in the connect list*/
+            for (j = 0; j < rmArr[curIdx].conNum; j++)
             {
-                playerPath[numOfSteps] = rmArr[curIdx].connect[j].con_name;
-                numOfSteps += 1;
-                curIdx = rmArr[curIdx].connect[j].room_idx;
-                exists = 1;
+                if (strcmp(playerMove, rmArr[curIdx].connect[j].con_name) == 0)
+                {
+                    playerPath[numOfSteps] = rmArr[curIdx].connect[j].con_name;
+                    numOfSteps += 1;
+                    curIdx = rmArr[curIdx].connect[j].room_idx;
+                    exists = 1;
+                }
             }
-        }
 
-        if (!exists && strcmp( playerMove, "time") != 0 )
-        {
-            printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
+            if (!exists)
+                printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
         }
-        else if (strcmp( playerMove, "time") == 0 )
+        else
         {
+            /* unlock the thread line*/
             pthread_mutex_unlock(&lock);
+            /* start the thead */
             pthread_join(tid, NULL);
-            pthread_mutex_lock(&lock);    
+            /*lock the thread line*/
+            pthread_mutex_lock(&lock);
+            /*create the thread line for run*/
             pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
-            readDataPrint();
+            /*Get the time generate from the thread*/
+            readDataPrint("./currentTime.txt");
         }
 
         printf("\n");
     }
- 
+}
+
+int main()
+{
+    struct Room *rmArr = creatRmArr();
+    loadFile(rmArr);
+    int curIdx = conRmPointGetStartRm(rmArr);
+
+    /*lock thread and create */
+    pthread_mutex_lock(&lock);
+    pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
+
+    runTheGame(rmArr, curIdx);
+
+    freeArr(rmArr);
+
     return 0;
 }

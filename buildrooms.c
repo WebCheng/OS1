@@ -147,7 +147,7 @@ void connectRoom(struct Room *rmArr)
     }
 }
 
-/*
+/*  using fopen for easy write the file;
  *   1. create dir [chengwe.rooms.pid]
  *   2. cd to dir 
  *   3. create the file and write content
@@ -214,7 +214,7 @@ void freeArr(struct Room *rmArr)
 
 int main()
 {
-    //random seed
+    /*random seed*/
     srand((unsigned)time(NULL));
 
     struct Room *rmArr = mallocRooms();
