@@ -22,20 +22,20 @@ char *room_name_list[ROOM_LIST_NUM] = {
     "jj"};
 
 /*
-*EXAMPLE:
-*   LIST room [7];
-*
-*   room[0]{
-*       room name = "XXXX";
-*       connect number = 2;
-*       connect =>point to connection room list
-*       room type = "END_ROOM"
-*           }
-*
-*   Connect[0-1]
-*       room idx = will be the LIST room position index
-*       room name => point to the roomlist[X] position
-*/
+ *EXAMPLE:
+ *   LIST room [7];
+ *
+ *   room[0]{
+ *       room name = "XXXX";
+ *       connect number = 2;
+ *       connect =>point to connection room list
+ *       room type = "END_ROOM"
+ *           }
+ *
+ *   Connect[0-1]
+ *       room idx = will be the LIST room position index
+ *       room name => point to the roomlist[X] position
+ */
 struct Room
 {
     /*room name (MAX len 8)*/
@@ -66,7 +66,7 @@ int isContainIdx(int *list, int num, int len)
     return 0;
 }
 
-void createRooms(struct Room *rmArr)
+void randRooms(struct Room *rmArr)
 {
     int numRm = 0;
     int *usedIdx = malloc(sizeof(int) * ROOM_USED_NUM);
@@ -82,32 +82,25 @@ void createRooms(struct Room *rmArr)
                 idx = 0;
         }
 
-        /*Open the all space at first!!*/
-        struct Connect *con = malloc(sizeof(struct Connect) * (ROOM_USED_NUM - 1));
-        struct Room *rm = malloc(sizeof(struct Room));
-
-        rm->room_name = room_name_list[idx];
-        rm->conNum = 0;
-        rm->connect = con;
+        strcpy(rmArr[numRm].room_name,room_name_list[idx]);
 
         if (numRm == 0)
-            rm->room_type = "START_ROOM";
+            strcpy(rmArr[numRm].room_type ,"START_ROOM");
         else if (numRm == (ROOM_USED_NUM - 1))
-            rm->room_type = "END_ROOM";
+            strcpy(rmArr[numRm].room_type ,"END_ROOM");
         else
-            rm->room_type = "MID_ROOM";
+            strcpy(rmArr[numRm].room_type ,"MID_ROOM");
 
         usedIdx[numRm] = idx;
-        rmArr[numRm] = *rm;
         numRm += 1;
     }
     free(usedIdx);
 }
 
 /*
-* idx1 = connecting node
-* idx2 = connected node
-*/
+ * idx1 = connecting node
+ * idx2 = connected node
+ */
 void setOtherConRoom(struct Room *rmArr, int idx1, int idx2)
 {
     rmArr[idx2].connect[rmArr[idx2].conNum].connect_room = &rmArr[idx1];
@@ -137,7 +130,6 @@ void connectRoom(struct Room *rmArr)
         {
             int idx2 = rand() % 6 + 1;
             /*isContainIdx(usedIdx, idx, ROOM_USED_NUM) ||*/
-            /*idx2 等於自己*/
             while (idx2 == i || isConnect(rmArr, i, idx2))
             {
                 idx2 += 1;
@@ -154,18 +146,18 @@ void connectRoom(struct Room *rmArr)
 } 
 
 /*
-*   1. create dir [chengwe.rooms.pid]
-*   2. cd to dir 
-*   3. create the file and write content
-*   4. cd ..
-*/
+ *   1. create dir [chengwe.rooms.pid]
+ *   2. cd to dir 
+ *   3. create the file and write content
+ *   4. cd ..
+ */
 void generateFile(struct Room *rmArr)
 {
     pid_t pid = getpid();
     int fileLen = strlen("chengwe") + strlen(".rooms.") + 10;
     char fDir [fileLen];
     sprintf(fDir, "%s.rooms.%d", "chengwe", pid);
-    
+
     mkdir(fDir, 0700);
     chdir(fDir);
 
@@ -174,31 +166,61 @@ void generateFile(struct Room *rmArr)
         FILE *file = fopen(rmArr[i].room_name, "w");
 
         fprintf(file, "ROOM NAME: %s\n", rmArr[i].room_name);
-  
+
         for (j = 0; j < rmArr[i].conNum; j++) 
         {
             fprintf(file, "CONNECTION %d: %s\n", j + 1, rmArr[i].connect[j].connect_room->room_name);
         }
         fprintf(file, "ROOM TYPE: %s", rmArr[i].room_type);
-    
+
         fclose(file);
     }
 
     chdir("..");
 }
 
+struct Room * mallocRooms()
+{
+    int i, j;
+    struct Room * rmArr = malloc(sizeof(struct Room) * ROOM_USED_NUM);
+    for(i = 0; i< ROOM_USED_NUM; i++)
+    {
+        rmArr[i].conNum = 0;
+        rmArr[i].room_name = malloc(sizeof(char) * 8);
+        rmArr[i].connect = malloc(sizeof(struct Connect) * 6);
+        rmArr[i].room_type = malloc(sizeof(char) * 10);
+
+    }
+    return rmArr;
+}
+
+void freeArr(struct Room *rmArr)
+{
+    int i;
+    for(i = 0; i < ROOM_USED_NUM; i++)
+    {
+
+        free(rmArr[i].room_name);
+        free(rmArr[i].connect);
+        free(rmArr[i].room_type);
+    }
+    free(rmArr);
+}
+
 int main()
 {
-    struct Room *rmArr = malloc(sizeof(struct Room) * ROOM_USED_NUM);
+    int i,j;
+    struct Room *rmArr = mallocRooms();
+
     srand((unsigned)time(NULL));
 
-    createRooms(rmArr);
+    randRooms(rmArr);
 
     connectRoom(rmArr); 
 
     generateFile(rmArr);
 
-    free(rmArr);
+    freeArr(rmArr);
 
     return 0;
 }

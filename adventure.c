@@ -185,9 +185,10 @@ void printFileinfo(struct Room *rmArr, int rmIdx)
 
 void* genCurrentTimeFile(void *arg)
 {    
+    pthread_mutex_lock(&lock);
+
     FILE *file = fopen("./currentTime.txt", "w");
         
-    pthread_mutex_lock(&lock);
     char outstr[200];
     time_t t;
     struct tm *tmp;
@@ -196,7 +197,6 @@ void* genCurrentTimeFile(void *arg)
     tmp = localtime(&t);
     
     strftime(outstr, sizeof(outstr),"%I:%M%p, %A, %B %d, %Y",tmp);
-    //printf("\n %s\n", outstr);
 
     fprintf(file, "%s", outstr);
 
@@ -234,7 +234,7 @@ int main()
 
     //genCurrentTimeFile();
 
-    //pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&lock);
     pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
 
     while (1)
@@ -275,9 +275,9 @@ int main()
         }
         else if (strcmp( playerMove, "time") == 0 )
         {
-            //pthread_mutex_unlock(&lock);
+            pthread_mutex_unlock(&lock);
             pthread_join(tid, NULL);
-            //pthread_mutex_lock(&lock);    
+            pthread_mutex_lock(&lock);    
             pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
             readDataPrint();
         }
