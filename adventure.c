@@ -61,6 +61,7 @@ void getlastDir(char *dir)
     DIR *d = opendir(".");
     struct dirent *dp;
     int count = 0;
+    char tmp[256] = "./";
 
     if (d)
     {
@@ -81,7 +82,10 @@ void getlastDir(char *dir)
         }
         closedir(d);
     }
-    sprintf(dir, "./%s/", dir);
+    
+    strcat(dir, "/");     
+    strcat(tmp, dir);     
+    strcpy(dir, tmp);
 }
 
 /*Load the data to the ROOM ARRAY
@@ -356,9 +360,10 @@ void runTheGame(struct Room *rmArr, int curIdx)
 int main()
 {
     struct Room *rmArr = creatRmArr();
+    
     loadFile(rmArr);
     int curIdx = conRmPointGetStartRm(rmArr);
-
+     
     /*lock thread and create */
     pthread_mutex_lock(&lock);
     pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
