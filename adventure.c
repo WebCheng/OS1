@@ -129,8 +129,7 @@ void loadFileContent(char *dirFile, struct Room *rmArr, int i)
     }
 
     fclose(fp);
-    if (line)
-        free(line);
+    if (line) free(line);
 }
 
 /*
@@ -158,6 +157,7 @@ void loadFile(struct Room *rmArr)
             loadFileContent(dirFile, rmArr, i);
             i += 1;
         }
+        closedir(d);
     }
     free(dir);
     free(dirFile);
@@ -362,13 +362,13 @@ int main()
     struct Room *rmArr = creatRmArr();
     
     loadFile(rmArr);
-    int curIdx = conRmPointGetStartRm(rmArr);
+    //int curIdx = conRmPointGetStartRm(rmArr);
      
     /*lock thread and create */
-    pthread_mutex_lock(&lock);
-    pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
+    //pthread_mutex_lock(&lock);
+    //pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
 
-    runTheGame(rmArr, curIdx);
+    //runTheGame(rmArr, curIdx);
 
     freeArr(rmArr);
 
