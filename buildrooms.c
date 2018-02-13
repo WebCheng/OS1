@@ -124,9 +124,7 @@ void connectRoom(struct Room *rmArr)
     for (i = 0; i < ROOM_USED_NUM; i++)
     {
         /*Random connect room numbers(3 ~ 6)*/
-        int conNum = rand() % (6 - 3 + 1) + 3;
-        conNum = 6;
-        printf("%d\n", conNum);
+        int conNum = rand() % (6 - 3 + 1) + 3; 
 
         /*(conNum - rmArrp[i].conNum) => remain number need to connect*/
         for (j = rmArr[i].conNum; j < conNum; j++)
