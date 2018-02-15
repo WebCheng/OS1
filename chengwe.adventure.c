@@ -362,13 +362,13 @@ int main()
     struct Room *rmArr = creatRmArr();
     
     loadFile(rmArr);
-    //int curIdx = conRmPointGetStartRm(rmArr);
+    int curIdx = conRmPointGetStartRm(rmArr);
      
     /*lock thread and create */
-    //pthread_mutex_lock(&lock);
-    //pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
+    pthread_mutex_lock(&lock);
+    pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
 
-    //runTheGame(rmArr, curIdx);
+    runTheGame(rmArr, curIdx);
 
     freeArr(rmArr);
 

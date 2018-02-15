@@ -129,8 +129,9 @@ void connectRoom(struct Room *rmArr)
         /*(conNum - rmArrp[i].conNum) => remain number need to connect*/
         for (j = rmArr[i].conNum; j < conNum; j++)
         {
-            /*Random number to get the room in the rmArr[]*/
-            int idx2 = rand() % 6 + 1;
+            /*Random number to get the room in the rmArr[]
+             * choose 5 because using rand num first easy get 6 connect*/
+            int idx2 = rand() % 5 + 1;
             /* Check the room has been connected or not
              * If connected than find the next room to connect.*/
             while (idx2 == i || isConnect(rmArr, i, idx2))
@@ -175,7 +176,7 @@ void generateFile(struct Room *rmArr)
             fprintf(file, "CONNECTION %d: %s\n", j + 1, rmArr[i].connect[j].connect_room->room_name);
         }
 
-        fprintf(file, "ROOM TYPE: %s", rmArr[i].room_type);
+        fprintf(file, "ROOM TYPE: %s\n", rmArr[i].room_type);
 
         fclose(file);
     }
