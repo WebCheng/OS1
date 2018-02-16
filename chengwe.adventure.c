@@ -151,6 +151,7 @@ void loadFile(struct Room *rmArr)
     {
         while ((dp = readdir(d)) != NULL)
         {
+            /*exclude "." and ".."*/
             if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
                 continue;
 
@@ -208,10 +209,13 @@ void freeArr(struct Room *rmArr)
 int conRmPointGetStartRm(struct Room *rmArr)
 {
     int i, j, k, curIdx;
+    /*LOOP How many rooms*/
     for (i = 0; i < ROOM_USED_NUM; i++)
     {
+        /*Loop connection rooms */   
         for (j = 0; j < rmArr[i].conNum; j++)
         {
+            /*Reloop room list to get connection info*/
             for (k = 0; k < ROOM_USED_NUM; k++)
             {
                 if (strstr(rmArr[i].connect[j].con_name, rmArr[k].room_name) != NULL)
@@ -263,6 +267,7 @@ void *genCurrentTimeFile(void *arg)
 
     t = time(NULL);
     tmp = localtime(&t);
+    /*1:03pm, Tuesday, September 13, 2016*/
     strftime(outstr, sizeof(outstr), "%I:%M%p, %A, %B %d, %Y", tmp);
     fprintf(file, "%s", outstr);
     fclose(file);
@@ -366,7 +371,7 @@ int main()
     loadFile(rmArr);
     int curIdx = conRmPointGetStartRm(rmArr);
      
-    /*lock thread and create */
+    /*lock the second thread and create */
     pthread_mutex_lock(&lock);
     pthread_create(&tid, NULL, &genCurrentTimeFile, NULL); 
 
