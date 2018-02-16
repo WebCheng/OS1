@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+/*
+Name: Webster Cheng
+OSUID: 933-295-313
+*/
 
 #define ROOM_LIST_NUM 10
 #define ROOM_USED_NUM 7
