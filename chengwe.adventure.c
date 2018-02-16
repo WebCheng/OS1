@@ -348,15 +348,15 @@ void runTheGame(struct Room *rmArr, int curIdx)
         }
         else
         {
-            /* unlock the thread line*/
+            /* unlock the  thread line; give the priority*/
             pthread_mutex_unlock(&lock);
-            /* start the thead */
+            /* start the second thead */
             pthread_join(tid, NULL);
-            /*lock the thread line*/
+            /*lock the thread line; lock the other using */
             pthread_mutex_lock(&lock);
-            /*create the thread line for run*/
+            /*create the secind thread line ready to run*/
             pthread_create(&tid, NULL, &genCurrentTimeFile, NULL);
-            /*Get the time generate from the thread*/
+            /*Get the time from the thread*/
             readDataPrint("./currentTime.txt");
         }
 
