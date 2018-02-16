@@ -7,6 +7,9 @@
 #include <time.h>
 #include <pthread.h>
 /*
+Name: Webster Cheng
+OSUID: 933-295-313
+
 Several complex and weird parts.
 
 Load ALL the file in the special directory.
@@ -19,9 +22,7 @@ Running the code using the while loop and several if to control the game output.
 Cannot figur out more quickly way to do it and no time to refine it.
 
 Mutiple thread
-Dont understand all of the thread part.
-Just fallowing the professor hint.
-Others quesiton: parallel 
+Others quesiton: parallel ...
 */
 
 #define ROOM_USED_NUM 7
@@ -60,6 +61,7 @@ void getlastDir(char *dir)
     time_t lastModified;
     DIR *d = opendir(".");
     struct dirent *dp;
+    /*For first loop can get st_time*/
     int count = 0;
     char tmp[256] = "./";
 
