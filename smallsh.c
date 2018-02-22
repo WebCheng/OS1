@@ -10,6 +10,7 @@
 
 char* INPUT;
 char* OUTPUT;
+char* tmpStr;
 int _shellStatus;
 int _isForeground = 0;
 
@@ -19,6 +20,39 @@ void freeMalloc()
         free(INPUT);
     if(OUTPUT != NULL)
         free(OUTPUT);
+}
+
+char *replaceWord(const char *s, const char *oldW,const char *newW)
+{
+    char *result;
+    int i, cnt = 0;
+    int newWlen = strlen(newW);
+    int oldWlen = strlen(oldW);
+    for (i = 0; s[i] != '\0'; i++)
+    {
+        if (strstr(&s[i], oldW) == &s[i])
+        {
+            cnt++;
+            i += oldWlen - 1;
+        }
+    }
+    result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
+
+    i = 0;
+    while (*s)
+    {
+        if (strstr(s, oldW) == s)
+        {
+            strcpy(&result[i], newW);
+            i += newWlen;
+            s += oldWlen;
+        }
+        else
+            result[i++] = *s++;
+    }
+
+    result[i] = '\0';
+    return result;
 }
 
 char** splitInput(char *line, int* isBackRun )
@@ -50,7 +84,6 @@ char** splitInput(char *line, int* isBackRun )
             if(token == NULL)
                 return argArr;
 
-            //setStdFile(token, OUTPUT);
             OUTPUT = malloc(sizeof(char) * strlen(token));
             strcpy(OUTPUT, token);
 
@@ -62,12 +95,13 @@ char** splitInput(char *line, int* isBackRun )
                 *isBackRun = 1;
             token = strtok(NULL, delim);
         }
-        else if(strcmp(token, "$$") == 0)
+        else if(strstr(token, "$$") != 0)
         {
             pid_t p = getpid();
-            char str[10];
-            sprintf(str, "%d", p);
-            argArr[idx] = str;
+            sprintf(tmpStr, "%d", p);
+
+            argArr[idx] = replaceWord(token,"$$",tmpStr);
+//            argArr[idx] = tmpStr;
             idx+=1;
             token = strtok(NULL, delim);
         }
@@ -79,12 +113,12 @@ char** splitInput(char *line, int* isBackRun )
         }
     };
 
-    /*printf("INPUT %s\n",INPUT);
-    printf("OUTPUT %s\n", OUTPUT);
-    int i;
-    for(i = 0 ;i < 4; i++)
-        printf("argArr[%d]: %s\n", i , argArr[i]);*/
-
+    /*    printf("INPUT %s\n",INPUT);
+          printf("OUTPUT %s\n", OUTPUT);
+          int i;
+          for(i = 0 ;i < 4; i++)
+          printf("argArr[%d]: %s\n", i , argArr[i]);
+          */
     return argArr;
 }
 
@@ -158,7 +192,7 @@ void exeOthers(char** argArr, int* isBackRun)
     {
         if(INPUT != NULL)
             exeStdFile(INPUT, stdin);
-        
+
 
         if(OUTPUT != NULL)
             exeStdFile(OUTPUT, stdout);
@@ -178,7 +212,7 @@ void exeOthers(char** argArr, int* isBackRun)
     {
         if(*isBackRun)
             printf("background pid is %d\n", pid);       
-        
+
         //WUNTRACED => a child is stoppted(exit or ctrl+C ) then return
         //Return a nonzero value if child terminated nomally
         //WIFSIGNALED => Return a nonzero value if child terminated by signal       
@@ -225,6 +259,7 @@ void shellLoop()
     size_t len = 0;
     ssize_t line_len;
     int t, isBackRun;
+    tmpStr = malloc(sizeof(char) * 10);
 
     do
     {
@@ -245,7 +280,7 @@ void trapInterrupt(int signal)
     pid_t pid = waitpid(-1, &_shellStatus, WUNTRACED);
     if( pid == 0 || pid == -1)
         return;
-    
+
     kill(pid, SIGKILL);
     printf("terminated by signal %d\n", WTERMSIG(signal)); 
 }
@@ -256,19 +291,19 @@ void changeMode(int sigNum)
     if(_isForeground)
     {
         _isForeground = 0;
-        printf("\nExiting foreground-only mode\n");
+        printf("\nExiting foreground-only mode\n:");
     }
     else
     {
         _isForeground = 1;
-        printf("\nEntering foreground-only mode (& is now ignored)\n");
+        printf("\nEntering foreground-only mode (& is now ignored)\n:");
     }
+    fflush(stdout);
 }
 
 int main() 
 {
-    //SIGINT => Interrupt 
-    signal(SIGINT, trapInterrupt);
+  //  signal(SIGINT, trapInterrupt);
     signal(SIGTSTP, changeMode);
     shellLoop();
     return 0;
