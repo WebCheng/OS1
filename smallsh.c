@@ -8,12 +8,17 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+/* Setting file for stdin and stdout*/
 char* INPUT;
 char* OUTPUT;
+/* For input argument with $$ to replace pid*/
 char* tmpStr;
+/* Shell status*/
 int _shellStatus;
+/**/
 int _isForeground = 0;
 
+/* Free the malloc memory*/
 void freeMalloc()
 {
     if(INPUT != NULL)
@@ -22,25 +27,36 @@ void freeMalloc()
         free(OUTPUT);
 }
 
+/* Function: replace sub string into new string
+ * Cite from: https://www.geeksforgeeks.org/c-program-replace-word-text-another-given-word/
+ * s      => original string
+ * oldW   => replaced substring
+ * newW   => placed substring 
+ * return => the new string*/
 char *replaceWord(const char *s, const char *oldW,const char *newW)
 {
     char *result;
     int i, cnt = 0;
     int newWlen = strlen(newW);
     int oldWlen = strlen(oldW);
+    /*Loop string until the end*/
     for (i = 0; s[i] != '\0'; i++)
     {
+        /*Count the how many place need to be changed*/
         if (strstr(&s[i], oldW) == &s[i])
         {
             cnt++;
             i += oldWlen - 1;
         }
     }
+
     result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
 
     i = 0;
+    /*Loop string until the end*/
     while (*s)
     {
+        /*Replacing the new word*/
         if (strstr(s, oldW) == s)
         {
             strcpy(&result[i], newW);
@@ -55,7 +71,11 @@ char *replaceWord(const char *s, const char *oldW,const char *newW)
     return result;
 }
 
-char** splitInput(char *line, int* isBackRun )
+/* Function : split the line into arguments
+ * line     => read line 
+ * isBackRun=> 0 running child process in the background
+ * return   => arguments array*/
+char** splitInput(char *line, int* isBackRun)
 {
     INPUT = NULL;
     OUTPUT = NULL;
@@ -67,6 +87,7 @@ char** splitInput(char *line, int* isBackRun )
     token = strtok(line, delim);
     while(token){
 
+        /* < => stdin data(a file)*/
         if(strcmp(token, "<") == 0)
         {   
             token = strtok(NULL, delim);
@@ -78,6 +99,7 @@ char** splitInput(char *line, int* isBackRun )
 
             token = strtok(NULL, delim);
         }
+        /* > => stdout data(a file)*/
         else if(strcmp(token, ">") == 0)
         {
             token = strtok(NULL, delim);
@@ -89,22 +111,25 @@ char** splitInput(char *line, int* isBackRun )
 
             token = strtok(NULL, delim);
         }
+        /* & => set child program running in background*/
         else if(strcmp(token, "&") == 0)
         {
             if(_isForeground == 0)
                 *isBackRun = 1;
             token = strtok(NULL, delim);
         }
+        /* $$ => replace into smallsh pid number*/
         else if(strstr(token, "$$") != 0)
         {
             pid_t p = getpid();
             sprintf(tmpStr, "%d", p);
 
+            /*Replace sub string "$$" into PID number*/
             argArr[idx] = replaceWord(token,"$$",tmpStr);
-//            argArr[idx] = tmpStr;
             idx+=1;
             token = strtok(NULL, delim);
         }
+        /*Regular argument*/
         else
         {
             argArr[idx] = token;
@@ -113,24 +138,24 @@ char** splitInput(char *line, int* isBackRun )
         }
     };
 
-    /*    printf("INPUT %s\n",INPUT);
-          printf("OUTPUT %s\n", OUTPUT);
-          int i;
-          for(i = 0 ;i < 4; i++)
-          printf("argArr[%d]: %s\n", i , argArr[i]);
-          */
+    /*
+    printf("INPUT %s\n",INPUT);
+    printf("OUTPUT %s\n", OUTPUT);
+    int i;
+    for(i = 0 ;i < 4; i++)
+        printf("argArr[%d]: %s\n", i , argArr[i]);    */
     return argArr;
 }
 
-
+/*Function: End the shell and Free the malloc memory */
 void exitCmd(char** argArr, char* line)
 {
-    freeMalloc();
     free(argArr);
     free(line);
     exit(0);
 }
 
+/*Function: cd to the input place or to the HOME*/
 void cdCmd(char** argArr)
 {
     if(argArr[2])
@@ -141,6 +166,7 @@ void cdCmd(char** argArr)
 
     char* dir = argArr[1];
 
+    /*No argument than cd home path */
     if(!dir)
         dir = getenv("HOME");
 
@@ -148,6 +174,7 @@ void cdCmd(char** argArr)
         perror("chdir");
 }
 
+/*Get the last time status*/
 void statusCmd()
 {
     //If the child exited, print its status
@@ -156,20 +183,19 @@ void statusCmd()
     // If it was signalled, print the signal it received.
     if (WIFSIGNALED(_shellStatus) && WSTOPSIG(_shellStatus) != 0)
         printf("stop signal %d\n", WSTOPSIG(_shellStatus));
-
     // If it was terminated, print the termination signal.
     if (WTERMSIG(_shellStatus))
         printf("terminated by signal %d\n",WTERMSIG(_shellStatus));
 }
 
-
+/* Function: create file(stdout) or read the file(stdin)
+ * fileName => File name
+ * io       => Stdin or stdout*/
 void exeStdFile(char* fileName, FILE* io)
 {
     int file = 0;
     if( io == stdout)
-    {
         file = open(fileName,O_WRONLY | O_CREAT, 0744);
-    }
     else
     {
         file = open(fileName, O_RDONLY);
@@ -179,10 +205,14 @@ void exeStdFile(char* fileName, FILE* io)
             exit(1);
         }
     }
+    /**/
     dup2(file,fileno(io));
     close(file);
 }
 
+/*Function: fork child process
+ * argArr   => [1] = Command;  [2~] = argument values
+ * isBackRum=> True: run child process in the back ground*/
 void exeOthers(char** argArr, int* isBackRun)
 {
     pid_t pid, wpid;
@@ -190,10 +220,9 @@ void exeOthers(char** argArr, int* isBackRun)
     pid = fork(); 
     if (pid == 0)
     {
+        /*If have input or output file*/
         if(INPUT != NULL)
             exeStdFile(INPUT, stdin);
-
-
         if(OUTPUT != NULL)
             exeStdFile(OUTPUT, stdout);
 
@@ -225,8 +254,13 @@ void exeOthers(char** argArr, int* isBackRun)
     }
 }
 
+/* Function: exe cmd, Spec command("cd", "exit", "status")
+ * argArr   => [1] = command
+ * isBackRun=> True running child process in the back ground
+ * line     => if exit than for free*/
 void exeCmd(char** argArr, int* isBackRun, char* line)
 {
+    /*if dont have input or catch "#" comment word => return*/
     if(!argArr[0] || strcmp(argArr[0],"#") == 0)
         return;
 
@@ -242,8 +276,10 @@ void exeCmd(char** argArr, int* isBackRun, char* line)
         exeOthers(argArr, isBackRun);
 }
 
+/*Function: finding defunct process id and release*/
 void traceDefunctPid()
 {
+    /*WNOHANG : find the defunct child process id*/
     pid_t pid = waitpid(-1, &_shellStatus, WNOHANG);
     if(pid == -1 || pid == 0)
         return;
@@ -252,13 +288,14 @@ void traceDefunctPid()
     statusCmd();
 }
 
-
+/*Function: loop for get the command line*/
 void shellLoop()
 {
     char *line = NULL, **argArr;
     size_t len = 0;
     ssize_t line_len;
-    int t, isBackRun;
+    int i, isBackRun;
+    /* For the string with $$*/
     tmpStr = malloc(sizeof(char) * 10);
 
     do
@@ -269,12 +306,14 @@ void shellLoop()
         line_len = getline(&line, &len, stdin);
         argArr = splitInput(line, &isBackRun);
         exeCmd(argArr, &isBackRun, line);
+        /*If the backgroud process finished print finished info*/
         traceDefunctPid();
 
         freeMalloc();
     }while(1);
 }
 
+/*Function: end the running child process*/
 void trapInterrupt(int signal)
 {
     pid_t pid = waitpid(-1, &_shellStatus, WUNTRACED);
@@ -285,6 +324,7 @@ void trapInterrupt(int signal)
     printf("terminated by signal %d\n", WTERMSIG(signal)); 
 }
 
+/* Function: the child process can||cannot run in the process */
 void changeMode(int sigNum)
 {
     signal(SIGTSTP, changeMode);
@@ -303,8 +343,12 @@ void changeMode(int sigNum)
 
 int main() 
 {
-  //  signal(SIGINT, trapInterrupt);
+    /*Trap the signal
+     * SIGINT = ctr+c
+     * SIGTSTP= ctr+z*/
+    signal(SIGINT, trapInterrupt);
     signal(SIGTSTP, changeMode);
+
     shellLoop();
     return 0;
 }
