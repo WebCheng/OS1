@@ -8,6 +8,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+
+/*  dup2
+ *  fflush
+ * */
+
 /* Setting file for stdin and stdout*/
 char* INPUT;
 char* OUTPUT;
@@ -15,7 +20,6 @@ char* OUTPUT;
 char* tmpStr;
 /* Shell status*/
 int _shellStatus;
-/**/
 int _isForeground = 0;
 
 /* Free the malloc memory*/
@@ -304,11 +308,13 @@ void shellLoop()
         printf(":");
 
         line_len = getline(&line, &len, stdin);
+        /*Clean the buffer*/
+        fflush(stdin);
         argArr = splitInput(line, &isBackRun);
         exeCmd(argArr, &isBackRun, line);
         /*If the backgroud process finished print finished info*/
         traceDefunctPid();
-
+       
         freeMalloc();
     }while(1);
 }
