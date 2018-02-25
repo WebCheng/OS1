@@ -142,8 +142,8 @@ char** splitInput(char *line, int* isBackRun)
         }
     };
 
-    /*
-    printf("INPUT %s\n",INPUT);
+    
+    /*printf("INPUT %s\n",INPUT);
     printf("OUTPUT %s\n", OUTPUT);
     int i;
     for(i = 0 ;i < 4; i++)
@@ -231,7 +231,7 @@ void exeOthers(char** argArr, int* isBackRun)
             exeStdFile(OUTPUT, stdout);
 
         fflush(stdout);
-
+        
         execvp(argArr[0],argArr);
         perror(argArr[0]);
         free(argArr);
@@ -265,7 +265,7 @@ void exeOthers(char** argArr, int* isBackRun)
 void exeCmd(char** argArr, int* isBackRun, char* line)
 {
     /*if dont have input or catch "#" comment word => return*/
-    if(!argArr[0] || strcmp(argArr[0],"#") == 0)
+    if(!argArr[0] || strstr(argArr[0],"#") != 0)
         return;
 
     char* cmd = argArr[0];
@@ -309,7 +309,7 @@ void shellLoop()
 
         line_len = getline(&line, &len, stdin);
         /*Clean the buffer*/
-        fflush(stdin);
+        fflush(stdout);
         argArr = splitInput(line, &isBackRun);
         exeCmd(argArr, &isBackRun, line);
         /*If the backgroud process finished print finished info*/
@@ -319,14 +319,10 @@ void shellLoop()
     }while(1);
 }
 
-/*Function: end the running child process*/
+/*Function: end the running child process
+ * child process will recieve signal too*/
 void trapInterrupt(int signal)
 {
-    pid_t pid = waitpid(-1, &_shellStatus, WUNTRACED);
-    if( pid == 0 || pid == -1)
-        return;
-
-    kill(pid, SIGKILL);
     printf("terminated by signal %d\n", WTERMSIG(signal)); 
 }
 
