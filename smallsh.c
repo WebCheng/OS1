@@ -333,12 +333,12 @@ void changeMode(int sigNum)
     if(_isForeground)
     {
         _isForeground = 0;
-        printf("\nExiting foreground-only mode\n:");
+        printf("Exiting foreground-only mode\n:");
     }
     else
     {
         _isForeground = 1;
-        printf("\nEntering foreground-only mode (& is now ignored)\n:");
+        printf("Entering foreground-only mode (& is now ignored)\n:");
     }
     fflush(stdout);
 }
