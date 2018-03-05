@@ -4,9 +4,10 @@ echo "PRE-SCRIPT INFO"
 echo "  Grading Script PID: $$"
 echo '  Note: your smallsh will report a different PID when evaluating $$'
 
-./lsh <<'___EOF___'
+./smallsh <<'___EOF___'
 echo BEGINNING TEST SCRIPT
-echo ------------
+echo
+echo --------------------
 echo Using comment (5 points if only next prompt is displayed next)
 #THIS COMMENT SHOULD DO NOTHING
 echo
@@ -73,18 +74,28 @@ echo
 echo --------------------
 echo pwd
 pwd
+echo
+echo
 echo --------------------
 echo cd
 cd
+echo
+echo
 echo --------------------
 echo pwd (10 points for being in the HOME dir)
 pwd
+echo
+echo
 echo --------------------
 echo mkdir testdir$$
 mkdir testdir$$
+echo
+echo
 echo --------------------
 echo cd testdir$$
 cd testdir$$
+echo
+echo
 echo --------------------
 echo pwd (5 points for being in the newly created dir)
 pwd
