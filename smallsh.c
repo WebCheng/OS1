@@ -9,8 +9,12 @@
 #include <sys/types.h>
 
 
-/*  dup2
- *  fflush
+/*  using  "signal" function to catch the interupt cmd 
+ *  		=> need to use WIFEXITED and WIFSIGNALED two function to check pid
+ *  fflush function for stdout => some part buffer cannot out put as usual
+ *	dup2	=> stdout file;
+ *	fork ,waitpid => for child process
+ *	
  * */
 
 /* Setting file for stdin and stdout*/
@@ -20,6 +24,7 @@ char* OUTPUT;
 char* tmpStr;
 /* Shell status*/
 int _shellStatus;
+/* ignored run in backgroud cmd */
 int _isForeground = 0;
 
 /* Free the malloc memory*/
@@ -209,7 +214,7 @@ void exeStdFile(char* fileName, FILE* io)
             exit(1);
         }
     }
-    /**/
+    /*replace standard out/in with out/in file*/
     dup2(file,fileno(io));
     close(file);
 }
@@ -333,12 +338,12 @@ void changeMode(int sigNum)
     if(_isForeground)
     {
         _isForeground = 0;
-        printf("\nExiting foreground-only mode\n:");
+        printf("Exiting foreground-only mode\n:");
     }
     else
     {
         _isForeground = 1;
-        printf("\nEntering foreground-only mode (& is now ignored)\n:");
+        printf("Entering foreground-only mode (& is now ignored)\n:");
     }
     fflush(stdout);
 }
