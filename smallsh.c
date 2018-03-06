@@ -121,7 +121,8 @@ char** splitInput(char *line, int* isBackRun)
             token = strtok(NULL, delim);
         }
         /* & => set child program running in background*/
-        else if(strcmp(token, "&") == 0)
+        /*  special echo if => for last checking, this maybe why excvp need to design first two input arg */
+        else if(strcmp(token, "&") == 0 && strcmp( argArr[0], "echo") != 0)
         {
             if(_isForeground == 0)
                 *isBackRun = 1;
